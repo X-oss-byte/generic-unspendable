@@ -57,20 +57,10 @@ def base58_decode (s, version):
     return data
 
 
-def generate (name, network):
-
-    # Pick network.
-    if network == 'testnet':
-        prefix_string = 'mv'
-        prefix_bytes = b'\x6f'
-    elif network == 'mainnet':
-        prefix_string = '1'
-        prefix_bytes = b'\x00'
-    else:
-        raise Exception('unknown network')
+def generate (prefix_string, vanity_keyword, prefix_bytes):
 
     # Pad and prefix.
-    prefixed_name = prefix_string + name
+    prefixed_name = prefix_string + vanity_keyword
     padded_prefixed_name = prefixed_name.ljust(34, 'X')
 
     # Decode, ignoring (bad) checksum.
@@ -87,6 +77,80 @@ def generate (name, network):
 
 if __name__ == '__main__':
 
-    name = sys.argv[1]
-    print('mainnet:', generate(name, 'mainnet'))
-    print('testnet:', generate(name, 'testnet'))
+    cont = True
+    prefix_string = ""
+    vanity_keyword = ""
+    # Check the cmd line parameters
+    if len(sys.argv) == 1:
+      # No arguments passed in
+      print("Error: No arguments found.")
+      cont = False
+    elif len(sys.argv) == 2:
+      # Only prefix string was passed in
+      prefix_string = sys.argv[1]
+    elif len(sys.argv) == 3:
+      # Both prefix string and vanity keyword were passed in
+      prefix_string = sys.argv[1]
+      vanity_keyword = sys.argv[2]
+    else:
+      # Too many arguments passed in
+      print("Error: Too many arguments found.")
+      cont = False
+    if cont == True:
+      # Check the length of the prefix and vanity keyword
+      if len(prefix_string + vanity_keyword) > 28:
+        print("Error: The address prefix and vanity keyword are too long to generate a valid address.")
+        cont = False
+    if cont == True:
+      # Check for invalid characters in the address prefix
+      for a in range(0, len(prefix_string)):
+        valid = False
+        for b in range(0, len(b58_digits)):
+          if prefix_string[a] == b58_digits[b]:
+            # This character is valid
+            valid = True
+            break
+        if valid == False:
+          # Invalid character found
+          print("Error: The address prefix must only contain numers or letters.")
+          cont = False
+          break
+    if cont == True:
+      # Check for invalid characters in the vanity keyword
+      for a in range(0, len(vanity_keyword)):
+        valid = False
+        for b in range(0, len(b58_digits)):
+          if vanity_keyword[a] == b58_digits[b]:
+            # This character is valid
+            valid = True
+            break
+        if valid == False:
+          # Invalid character found
+          print("Error: The vanity keyword must only contain numers or letters.")
+          cont = False
+          break		  
+    if cont == True:
+      found = False
+      # Loop through all possible prefix bytes to figure out the correct byte
+      for i in range(0, 256):
+        # Get the next address to test
+        result = generate(prefix_string, vanity_keyword, (i).to_bytes(1, 'big'))
+        # Check if this is the correct address
+        if result[:len(prefix_string) + len(vanity_keyword)] == prefix_string + vanity_keyword:
+          # 99% sure this is the correct address but do one last check to be 100%
+          found = True
+          xbits = result[len(prefix_string) + len(vanity_keyword):-6]
+          for x in range(0, len(xbits)):
+            if xbits[x] != "X":
+              # This is not the correct address after all
+              found = False
+              break
+          # Stop checking if the correct address has already been found
+          if found == True:
+            # Display the result
+            print("Result: " + result)
+            print("Decimal Address Prefix: " + str(i))
+            break
+      # Ensure that a result was already returned
+      if found == False:
+        print("Error: No results found.")
