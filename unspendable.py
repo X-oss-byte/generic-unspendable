@@ -112,7 +112,7 @@ if __name__ == '__main__':
             break
         if valid == False:
           # Invalid character found
-          print("Error: The address prefix must only contain numers or letters.")
+          print("Error: Invalid characters detected in the address prefix. Valid characters are: " + b58_digits)
           cont = False
           break
     if cont == True:
@@ -126,7 +126,7 @@ if __name__ == '__main__':
             break
         if valid == False:
           # Invalid character found
-          print("Error: The vanity keyword must only contain numers or letters.")
+          print("Error: Invalid characters detected in the vanity keyword. Valid characters are: " + b58_digits)
           cont = False
           break		  
     if cont == True:
